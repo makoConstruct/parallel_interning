@@ -3,7 +3,7 @@
 An [interner](https://en.wikipedia.org/wiki/String_interning) that can be efficiently shared between multiple threads. Built on top of [CHashMap](https://crates.io/crates/chashmap).
 
 ```rust
-let interner: Arc<Interner<String>> = super::Interner::new();
+let interner: Arc<Interner<String>> = Interner::new();
 let a:Interned<String> = Interner::get(&interner, "repeat".into());
 let b:Interned<String> = Interner::get(&interner, "repeat".into());
 let c:Interned<String> = Interner::get(&interner, "unique".into());
@@ -16,7 +16,7 @@ assert!(a != c);
 
 An `Interned<Thing>` is just an Arc pointing to a struct (an `InternedSlot<Thing>`) that has a copy of the interned thing, and an arc pointing to the `Interner` that the `Interned` was made with. The `Interner` is really just a `CHashMap` mapping from interned things to Weak refs of the `Interned`.
 
-When you intern something, the `Interner` will check to see if it's already there.
+When you intern something, the `Interner` will check for it in the `CHashMap<Thing, Weak<InternedSlot<Thing>>>`
     
 * If it's there, it will try to upgrade the Weak ref of the corresponding `InternedSlot<Thing>` into an `Interned<Thing>` and give you that.
 	* If it can't upgrade, that means there are no longer any Arcs pointing at that `InternedSlot` any more, so it must be on the verge of being dropped. When an InternedSlot is dropped, it erases its corresponding Weak from the `Interner`. Anticipating this, we (repeatedly, if necessary) relinquish our read lock and take it again until either the thing has been found to be erased, or until a new Weak takes its place that *can* upgrade into an Arc.

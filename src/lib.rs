@@ -101,6 +101,7 @@ impl<T> Interner<T> where T:PartialEq + Hash + Clone {
 				if let Some(ar) = rg.upgrade() {
 					ar
 				}else{
+					drop(rg);
 					upsertion()
 				}
 			}else{
